@@ -565,6 +565,24 @@ type BusinessCapabilityNode struct {
 	History            []HistoryEntry `json:"history"`
 }
 
+// CommunityNode represents a community of practice or interest
+// that cuts across team boundaries. Membership is expressed via
+// edges — either from specific persons (explicit) or from master
+// roles whose role instances and assigned persons automatically
+// become members (implicit).
+type CommunityNode struct {
+	ID        string         `json:"id"`
+	// format: "community-[slug]"
+	// e.g. "community-frontend-engineers"
+
+	Name      string         `json:"name"`
+	Purpose   string         `json:"purpose"`
+	Status    NodeStatus     `json:"status"`
+	CreatedAt string         `json:"createdAt"`
+	UpdatedAt string         `json:"updatedAt"`
+	History   []HistoryEntry `json:"history"`
+}
+
 // ─────────────────────────────────────────────
 // Edge types
 // ─────────────────────────────────────────────
@@ -944,6 +962,39 @@ type OwnsCapabilityEdge struct {
 	Target           string `json:"target"`           // BusinessCapabilityNode ID
 }
 
+// CommunityLeadEdge — Person → Community: person is the lead
+// of this community.
+type CommunityLeadEdge struct {
+	ID               string `json:"id"`
+	// format: "edge-[source-slug]-community_lead-[target-slug]"
+	RelationshipType string `json:"relationshipType"` // "community_lead"
+	Source           string `json:"source"`           // PersonNode ID
+	Target           string `json:"target"`           // CommunityNode ID
+}
+
+// PersonCommunityMemberEdge — Person → Community: person is an
+// explicit member of this community.
+type PersonCommunityMemberEdge struct {
+	ID               string `json:"id"`
+	// format: "edge-[source-slug]-person_community_member-[target-slug]"
+	RelationshipType string `json:"relationshipType"` // "person_community_member"
+	Source           string `json:"source"`           // PersonNode ID
+	Target           string `json:"target"`           // CommunityNode ID
+}
+
+// MasterRoleCommunityMemberEdge — MasterRole → Community: all persons
+// filling any role that is an instance of this master role
+// automatically become members of this community.
+// Resolved at query time via three-hop traversal:
+// MasterRole → (InstanceOfEdge) → Role → (FillsRoleEdge) → Person.
+type MasterRoleCommunityMemberEdge struct {
+	ID               string `json:"id"`
+	// format: "edge-[source-slug]-master_role_community_member-[target-slug]"
+	RelationshipType string `json:"relationshipType"` // "master_role_community_member"
+	Source           string `json:"source"`           // MasterRoleNode ID
+	Target           string `json:"target"`           // CommunityNode ID
+}
+
 // ─────────────────────────────────────────────
 // Graph union and root types
 // ─────────────────────────────────────────────
@@ -969,5 +1020,6 @@ type GraphData struct {
 	OKRs             []OKRNode            `json:"okrs"`
 	Processes            []ProcessNode            `json:"processes"`
 	BusinessCapabilities []BusinessCapabilityNode `json:"businessCapabilities"`
+	Communities          []CommunityNode          `json:"communities"`
 	Edges                []GraphEdge              `json:"edges"`
 }
