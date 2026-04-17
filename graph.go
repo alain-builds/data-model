@@ -247,6 +247,15 @@ const (
 	AllocationKeyCustom    AllocationKey = "custom"
 )
 
+// CapabilityLevel classifies a business capability by its granularity level in the hierarchy.
+type CapabilityLevel string
+
+const (
+	CapabilityLevelL1 CapabilityLevel = "l1"
+	CapabilityLevelL2 CapabilityLevel = "l2"
+	CapabilityLevelL3 CapabilityLevel = "l3"
+)
+
 // ─────────────────────────────────────────────
 // Shared / helper types
 // ─────────────────────────────────────────────
@@ -530,6 +539,30 @@ type ProcessNode struct {
 	CreatedAt        string         `json:"createdAt"`
 	UpdatedAt        string         `json:"updatedAt"`
 	History          []HistoryEntry `json:"history"`
+}
+
+// BusinessCapabilityNode represents a business capability —
+// what the organisation can do, independent of how it is structured.
+// L1/L2/L3 granularity is expressed via ParentCapabilityID hierarchy,
+// not separate node types. Maximum depth is L3.
+type BusinessCapabilityNode struct {
+	ID                 string         `json:"id"`
+	// format: "capability-[slug]"
+	// e.g. "capability-customer-onboarding"
+
+	Name               string         `json:"name"`
+	Description        string         `json:"description"`
+
+	ParentCapabilityID *string        `json:"parentCapabilityId"`
+	// nil  = L1 top-level capability
+	// one level deep  = L2
+	// two levels deep = L3
+	// do not model deeper than L3
+
+	Status             NodeStatus     `json:"status"`
+	CreatedAt          string         `json:"createdAt"`
+	UpdatedAt          string         `json:"updatedAt"`
+	History            []HistoryEntry `json:"history"`
 }
 
 // ─────────────────────────────────────────────
@@ -868,6 +901,37 @@ type BelongsToDomainEdge struct {
 	Target           string `json:"target"`           // DomainNode ID
 }
 
+// CapabilityParentOfEdge — BusinessCapability → BusinessCapability:
+// parent capability decomposes into this child capability.
+// Mirrors ParentCapabilityID for graph traversal consistency.
+type CapabilityParentOfEdge struct {
+	ID               string `json:"id"`
+	// format: "edge-[source-slug]-capability_parent_of-[target-slug]"
+	RelationshipType string `json:"relationshipType"` // "capability_parent_of"
+	Source           string `json:"source"`           // BusinessCapabilityNode ID
+	Target           string `json:"target"`           // BusinessCapabilityNode ID
+}
+
+// EnablesValueStreamEdge — BusinessCapability → ValueStream:
+// this capability enables one or more value streams.
+type EnablesValueStreamEdge struct {
+	ID               string `json:"id"`
+	// format: "edge-[source-slug]-enables_value_stream-[target-slug]"
+	RelationshipType string `json:"relationshipType"` // "enables_value_stream"
+	Source           string `json:"source"`           // BusinessCapabilityNode ID
+	Target           string `json:"target"`           // ValueStreamNode ID
+}
+
+// OwnsCapabilityEdge — Role | Team → BusinessCapability:
+// node is the accountable owner of this capability.
+type OwnsCapabilityEdge struct {
+	ID               string `json:"id"`
+	// format: "edge-[source-slug]-owns_capability-[target-slug]"
+	RelationshipType string `json:"relationshipType"` // "owns_capability"
+	Source           string `json:"source"`           // RoleNode | TeamNode ID
+	Target           string `json:"target"`           // BusinessCapabilityNode ID
+}
+
 // ─────────────────────────────────────────────
 // Graph union and root types
 // ─────────────────────────────────────────────
@@ -891,6 +955,7 @@ type GraphData struct {
 	CostCenters      []CostCenterNode     `json:"costCenters"`
 	KPIs             []KPINode            `json:"kpis"`
 	OKRs             []OKRNode            `json:"okrs"`
-	Processes        []ProcessNode        `json:"processes"`
-	Edges            []GraphEdge          `json:"edges"`
+	Processes            []ProcessNode            `json:"processes"`
+	BusinessCapabilities []BusinessCapabilityNode `json:"businessCapabilities"`
+	Edges                []GraphEdge              `json:"edges"`
 }
