@@ -778,6 +778,18 @@ type ValueStreamParentOfProcessEdge struct {
 	Target           string `json:"target"`           // ProcessNode ID
 }
 
+// BusinessCapabilityParentOfProcessEdge — BusinessCapability → Process:
+// a business capability decomposes into this process.
+// Distinct from ValueStreamParentOfProcessEdge — expresses how a
+// capability is executed, not how a value stream is delivered.
+type BusinessCapabilityParentOfProcessEdge struct {
+	ID               string `json:"id"`
+	// format: "edge-[source-slug]-capability_parent_of_process-[target-slug]"
+	RelationshipType string `json:"relationshipType"` // "capability_parent_of_process"
+	Source           string `json:"source"`           // BusinessCapabilityNode ID
+	Target           string `json:"target"`           // ProcessNode ID
+}
+
 // ProcessParentOfEdge — Process → Process: parent process decomposes into this child.
 type ProcessParentOfEdge struct {
 	ID               string `json:"id"`
@@ -844,12 +856,12 @@ type KPIParentOfEdge struct {
 	Target           string `json:"target"`           // KPINode ID
 }
 
-// ContributesToKPIEdge — Team | TemporaryTeam | Role | Service | ValueStream | Person | Process → KPI.
+// ContributesToKPIEdge — Team | TemporaryTeam | Role | Service | ValueStream | Person | Process | BusinessCapability → KPI.
 type ContributesToKPIEdge struct {
 	ID               string           `json:"id"`
 	RelationshipType string           `json:"relationshipType"` // "contributes_to_kpi"
 	ContributionType ContributionType `json:"contributionType"`
-	Source           string           `json:"source"` // TeamNode | TemporaryTeamNode | RoleNode | ServiceNode | ValueStreamNode | PersonNode | ProcessNode ID
+	Source           string           `json:"source"` // TeamNode | TemporaryTeamNode | RoleNode | ServiceNode | ValueStreamNode | PersonNode | ProcessNode | BusinessCapabilityNode ID
 	Target           string           `json:"target"` // KPINode ID
 }
 
