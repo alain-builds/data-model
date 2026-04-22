@@ -208,6 +208,15 @@ const (
 	ProcessStatusArchived ProcessStatus = "archived"
 )
 
+// ProcessType classifies a process by its organisational role.
+type ProcessType string
+
+const (
+	ProcessTypeCore       ProcessType = "core"
+	ProcessTypeSupport    ProcessType = "support"
+	ProcessTypeManagement ProcessType = "management"
+)
+
 // AuthorityType classifies a decision authority.
 type AuthorityType string
 
@@ -247,15 +256,6 @@ const (
 	AllocationKeyCustom    AllocationKey = "custom"
 )
 
-// CapabilityLevel classifies a business capability by its granularity level in the hierarchy.
-type CapabilityLevel string
-
-const (
-	CapabilityLevelL1 CapabilityLevel = "l1"
-	CapabilityLevelL2 CapabilityLevel = "l2"
-	CapabilityLevelL3 CapabilityLevel = "l3"
-)
-
 // ─────────────────────────────────────────────
 // Shared / helper types
 // ─────────────────────────────────────────────
@@ -271,6 +271,16 @@ type GeographicalLocation struct {
 type HistoryEntry struct {
 	Timestamp     string   `json:"timestamp"`     // ISO 8601
 	UpdatedFields []string `json:"updatedFields"`
+}
+
+// AuditInfo captures creation, update, and change-history metadata shared by all nodes.
+// Fields are embedded directly into each node so JSON output remains flat.
+type AuditInfo struct {
+	CreatedAt string         `json:"createdAt"` // ISO 8601
+	CreatedBy string         `json:"createdBy"` // PersonNode ID
+	UpdatedAt string         `json:"updatedAt"` // ISO 8601
+	UpdatedBy string         `json:"updatedBy"` // PersonNode ID
+	History   []HistoryEntry `json:"history"`
 }
 
 // SocialLink is a link to a personal social or professional profile.
@@ -310,25 +320,21 @@ type DecisionAuthority struct {
 
 // DomainNode represents a domain that governance bodies and decision authorities operate within.
 type DomainNode struct {
-	ID        string         `json:"id"` // format: "domain-[slug]"
-	Name      string         `json:"name"`
-	Status    NodeStatus     `json:"status"`
-	CreatedAt string         `json:"createdAt"`
-	UpdatedAt string         `json:"updatedAt"`
-	History   []HistoryEntry `json:"history"`
+	ID     string     `json:"id"` // format: "domain-[slug]"
+	Name   string     `json:"name"`
+	Status NodeStatus `json:"status"`
+	AuditInfo
 }
 
 // LegalEntityNode represents a legal entity within the organisational structure.
 type LegalEntityNode struct {
-	ID        string               `json:"id"` // format: "legal-entity-[slug]"
-	Name      string               `json:"name"`
-	Type      LegalEntityType      `json:"type"`
-	Address   string               `json:"address"`
-	Location  GeographicalLocation `json:"location"`
-	Status    NodeStatus           `json:"status"`
-	CreatedAt string               `json:"createdAt"`
-	UpdatedAt string               `json:"updatedAt"`
-	History   []HistoryEntry       `json:"history"`
+	ID       string               `json:"id"` // format: "legal-entity-[slug]"
+	Name     string               `json:"name"`
+	Type     LegalEntityType      `json:"type"`
+	Address  string               `json:"address"`
+	Location GeographicalLocation `json:"location"`
+	Status   NodeStatus           `json:"status"`
+	AuditInfo
 }
 
 // TeamNode represents a permanent team node in the organisational hierarchy.
@@ -347,9 +353,7 @@ type TeamNode struct {
 	CommunicationChannels     []CommunicationChannel `json:"communicationChannels"`
 	IsManagedService          bool                   `json:"isManagedService"`
 	Status                    NodeStatus             `json:"status"`
-	CreatedAt                 string                 `json:"createdAt"`
-	UpdatedAt                 string                 `json:"updatedAt"`
-	History                   []HistoryEntry         `json:"history"`
+	AuditInfo
 }
 
 // TemporaryTeamNode represents a temporary or ad-hoc team within the hierarchy.
@@ -368,21 +372,17 @@ type TemporaryTeamNode struct {
 	DirectInternalMemberCount int                    `json:"directInternalMemberCount"`
 	DirectExternalMemberCount int                    `json:"directExternalMemberCount"`
 	Status                    NodeStatus             `json:"status"`
-	CreatedAt                 string                 `json:"createdAt"`
-	UpdatedAt                 string                 `json:"updatedAt"`
-	History                   []HistoryEntry         `json:"history"`
+	AuditInfo
 }
 
 // MasterRoleNode represents a canonical role template shared across teams.
 type MasterRoleNode struct {
-	ID               string         `json:"id"` // format: "master-role-[slug]"
-	Name             string         `json:"name"`
-	Purpose          string         `json:"purpose"`
-	Responsibilities []string       `json:"responsibilities"`
-	Status           NodeStatus     `json:"status"`
-	CreatedAt        string         `json:"createdAt"`
-	UpdatedAt        string         `json:"updatedAt"`
-	History          []HistoryEntry `json:"history"`
+	ID               string     `json:"id"` // format: "master-role-[slug]"
+	Name             string     `json:"name"`
+	Purpose          string     `json:"purpose"`
+	Responsibilities []string   `json:"responsibilities"`
+	Status           NodeStatus `json:"status"`
+	AuditInfo
 }
 
 // RoleNode represents a role instance within a specific team.
@@ -395,9 +395,7 @@ type RoleNode struct {
 	Responsibilities      []string               `json:"responsibilities"`
 	DecisionAuthorities   []DecisionAuthority    `json:"decisionAuthorities"`
 	Status                NodeStatus             `json:"status"`
-	CreatedAt             string                 `json:"createdAt"`
-	UpdatedAt             string                 `json:"updatedAt"`
-	History               []HistoryEntry         `json:"history"`
+	AuditInfo
 }
 
 // PersonNode represents a person within the organisation.
@@ -406,7 +404,7 @@ type PersonNode struct {
 	PersonType            PersonType             `json:"personType"`
 	FirstName             string                 `json:"firstName"`
 	Surname               string                 `json:"surname"`
-	Email                 *string                `json:"email"`    // null for stub persons
+	Email                 *string                `json:"email"` // null for stub persons
 	IsExternal            bool                   `json:"isExternal"`
 	CommunicationChannels []CommunicationChannel `json:"communicationChannels"`
 	ContributorType       ContributorType        `json:"contributorType"`
@@ -417,20 +415,16 @@ type PersonNode struct {
 	AvatarURL             *string                `json:"avatarUrl"`
 	Location              GeographicalLocation   `json:"location"`
 	Status                NodeStatus             `json:"status"`
-	CreatedAt             string                 `json:"createdAt"`
-	UpdatedAt             string                 `json:"updatedAt"`
-	History               []HistoryEntry         `json:"history"`
+	AuditInfo
 }
 
 // ValueStreamNode represents an end-to-end value stream crossing team boundaries.
 type ValueStreamNode struct {
-	ID               string         `json:"id"` // format: "value-stream-[slug]"
-	Name             string         `json:"name"`
-	BusinessOutcomes []string       `json:"businessOutcomes"`
-	Status           NodeStatus     `json:"status"`
-	CreatedAt        string         `json:"createdAt"`
-	UpdatedAt        string         `json:"updatedAt"`
-	History          []HistoryEntry `json:"history"`
+	ID               string     `json:"id"` // format: "value-stream-[slug]"
+	Name             string     `json:"name"`
+	BusinessOutcomes []string   `json:"businessOutcomes"`
+	Status           NodeStatus `json:"status"`
+	AuditInfo
 }
 
 // GovernanceBodyNode represents a governance body.
@@ -447,9 +441,7 @@ type GovernanceBodyNode struct {
 	CommunicationChannels []CommunicationChannel `json:"communicationChannels"`
 	DecisionAuthorities   []DecisionAuthority    `json:"decisionAuthorities"`
 	Status                NodeStatus             `json:"status"`
-	CreatedAt             string                 `json:"createdAt"`
-	UpdatedAt             string                 `json:"updatedAt"`
-	History               []HistoryEntry         `json:"history"`
+	AuditInfo
 }
 
 // ServiceNode represents a service provided or consumed within the organisational operating model.
@@ -463,16 +455,12 @@ type ServiceNode struct {
 	RequestURL            *string                `json:"requestUrl"`
 	CommunicationChannels []CommunicationChannel `json:"communicationChannels"`
 	Status                ServiceStatus          `json:"status"`
-	CreatedAt             string                 `json:"createdAt"`
-	CreatedBy             string                 `json:"createdBy"` // PersonNode ID
-	UpdatedAt             string                 `json:"updatedAt"`
-	UpdatedBy             string                 `json:"updatedBy"` // PersonNode ID
-	History               []HistoryEntry         `json:"history"`
+	AuditInfo
 }
 
 // CostCenterNode represents a cost center used for financial tracking and budget allocation.
 type CostCenterNode struct {
-	ID              string          `json:"id"` // format: "cost-center-[slug]"
+	ID              string          `json:"id"`              // format: "cost-center-[slug]"
 	Name            string          `json:"name"`
 	Code            string          `json:"code"`            // ERP/GL code e.g. "CC-4720"
 	ExternalID      *string         `json:"externalId"`      // for SAP/Oracle bi-directional sync
@@ -482,9 +470,7 @@ type CostCenterNode struct {
 	FiscalYearStart *string         `json:"fiscalYearStart"` // ISO 8601 date
 	ChargebackModel ChargebackModel `json:"chargebackModel"`
 	Status          NodeStatus      `json:"status"`
-	CreatedAt       string          `json:"createdAt"`
-	UpdatedAt       string          `json:"updatedAt"`
-	History         []HistoryEntry  `json:"history"`
+	AuditInfo
 }
 
 // KPINode represents a measurable key performance indicator.
@@ -502,9 +488,7 @@ type KPINode struct {
 	MeasurementFrequency MeasurementFrequency `json:"measurementFrequency"`
 	DashboardURL         *string              `json:"dashboardUrl"`
 	Status               NodeStatus           `json:"status"`
-	CreatedAt            string               `json:"createdAt"`
-	UpdatedAt            string               `json:"updatedAt"`
-	History              []HistoryEntry       `json:"history"`
+	AuditInfo
 }
 
 // OKRNode represents an Objective or Key Result within an OKR cycle.
@@ -522,47 +506,31 @@ type OKRNode struct {
 	ProgressStatus  OKRProgressStatus `json:"progressStatus"`
 	ConfidenceScore *float64          `json:"confidenceScore"` // 0–100
 	Status          OKRStatus         `json:"status"`
-	CreatedAt       string            `json:"createdAt"`
-	UpdatedAt       string            `json:"updatedAt"`
-	History         []HistoryEntry    `json:"history"`
+	AuditInfo
 }
 
 // ProcessNode represents a standardised repeatable workflow.
 type ProcessNode struct {
-	ID               string         `json:"id"` // format: "process-[slug]"
-	Name             string         `json:"name"`
-	Type             string         `json:"type"`
-	Description      string         `json:"description"`
-	Steps            []string       `json:"steps"`
-	DocumentationURL *string        `json:"documentationUrl"`
-	Status           ProcessStatus  `json:"status"`
-	CreatedAt        string         `json:"createdAt"`
-	UpdatedAt        string         `json:"updatedAt"`
-	History          []HistoryEntry `json:"history"`
+	ID               string        `json:"id"` // format: "process-[slug]"
+	Name             string        `json:"name"`
+	Type             ProcessType   `json:"type"`
+	Description      string        `json:"description"`
+	Steps            []string      `json:"steps"`
+	DocumentationURL *string       `json:"documentationUrl"`
+	Status           ProcessStatus `json:"status"`
+	AuditInfo
 }
 
 // BusinessCapabilityNode represents a business capability —
 // what the organisation can do, independent of how it is structured.
-// L1/L2/L3 granularity is expressed via ParentCapabilityID hierarchy,
+// L1/L2/L3 granularity is expressed via CapabilityParentOfEdge hierarchy,
 // not separate node types. Maximum depth is L3.
 type BusinessCapabilityNode struct {
-	ID                 string         `json:"id"`
-	// format: "capability-[slug]"
-	// e.g. "capability-customer-onboarding"
-
-	Name               string         `json:"name"`
-	Description        string         `json:"description"`
-
-	ParentCapabilityID *string        `json:"parentCapabilityId"`
-	// nil  = L1 top-level capability
-	// one level deep  = L2
-	// two levels deep = L3
-	// do not model deeper than L3
-
-	Status             NodeStatus     `json:"status"`
-	CreatedAt          string         `json:"createdAt"`
-	UpdatedAt          string         `json:"updatedAt"`
-	History            []HistoryEntry `json:"history"`
+	ID          string     `json:"id"` // format: "capability-[slug]"
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Status      NodeStatus `json:"status"`
+	AuditInfo
 }
 
 // CommunityNode represents a community of practice or interest
@@ -571,16 +539,11 @@ type BusinessCapabilityNode struct {
 // roles whose role instances and assigned persons automatically
 // become members (implicit).
 type CommunityNode struct {
-	ID        string         `json:"id"`
-	// format: "community-[slug]"
-	// e.g. "community-frontend-engineers"
-
-	Name      string         `json:"name"`
-	Purpose   string         `json:"purpose"`
-	Status    NodeStatus     `json:"status"`
-	CreatedAt string         `json:"createdAt"`
-	UpdatedAt string         `json:"updatedAt"`
-	History   []HistoryEntry `json:"history"`
+	ID      string     `json:"id"` // format: "community-[slug]"
+	Name    string     `json:"name"`
+	Purpose string     `json:"purpose"`
+	Status  NodeStatus `json:"status"`
+	AuditInfo
 }
 
 // ─────────────────────────────────────────────
@@ -801,8 +764,7 @@ type ValueStreamParentOfProcessEdge struct {
 // Distinct from ValueStreamParentOfProcessEdge — expresses how a
 // capability is executed, not how a value stream is delivered.
 type BusinessCapabilityParentOfProcessEdge struct {
-	ID               string `json:"id"`
-	// format: "edge-[source-slug]-capability_parent_of_process-[target-slug]"
+	ID               string `json:"id"` // format: "edge-[source-slug]-capability_parent_of_process-[target-slug]"
 	RelationshipType string `json:"relationshipType"` // "capability_parent_of_process"
 	Source           string `json:"source"`           // BusinessCapabilityNode ID
 	Target           string `json:"target"`           // ProcessNode ID
@@ -933,10 +895,8 @@ type BelongsToDomainEdge struct {
 
 // CapabilityParentOfEdge — BusinessCapability → BusinessCapability:
 // parent capability decomposes into this child capability.
-// Mirrors ParentCapabilityID for graph traversal consistency.
 type CapabilityParentOfEdge struct {
-	ID               string `json:"id"`
-	// format: "edge-[source-slug]-capability_parent_of-[target-slug]"
+	ID               string `json:"id"` // format: "edge-[source-slug]-capability_parent_of-[target-slug]"
 	RelationshipType string `json:"relationshipType"` // "capability_parent_of"
 	Source           string `json:"source"`           // BusinessCapabilityNode ID
 	Target           string `json:"target"`           // BusinessCapabilityNode ID
@@ -945,8 +905,7 @@ type CapabilityParentOfEdge struct {
 // EnablesValueStreamEdge — BusinessCapability → ValueStream:
 // this capability enables one or more value streams.
 type EnablesValueStreamEdge struct {
-	ID               string `json:"id"`
-	// format: "edge-[source-slug]-enables_value_stream-[target-slug]"
+	ID               string `json:"id"` // format: "edge-[source-slug]-enables_value_stream-[target-slug]"
 	RelationshipType string `json:"relationshipType"` // "enables_value_stream"
 	Source           string `json:"source"`           // BusinessCapabilityNode ID
 	Target           string `json:"target"`           // ValueStreamNode ID
@@ -955,28 +914,23 @@ type EnablesValueStreamEdge struct {
 // OwnsCapabilityEdge — Role | Team → BusinessCapability:
 // node is the accountable owner of this capability.
 type OwnsCapabilityEdge struct {
-	ID               string `json:"id"`
-	// format: "edge-[source-slug]-owns_capability-[target-slug]"
+	ID               string `json:"id"` // format: "edge-[source-slug]-owns_capability-[target-slug]"
 	RelationshipType string `json:"relationshipType"` // "owns_capability"
 	Source           string `json:"source"`           // RoleNode | TeamNode ID
 	Target           string `json:"target"`           // BusinessCapabilityNode ID
 }
 
-// CommunityLeadEdge — Person → Community: person is the lead
-// of this community.
+// CommunityLeadEdge — Person → Community: person is the lead of this community.
 type CommunityLeadEdge struct {
-	ID               string `json:"id"`
-	// format: "edge-[source-slug]-community_lead-[target-slug]"
+	ID               string `json:"id"` // format: "edge-[source-slug]-community_lead-[target-slug]"
 	RelationshipType string `json:"relationshipType"` // "community_lead"
 	Source           string `json:"source"`           // PersonNode ID
 	Target           string `json:"target"`           // CommunityNode ID
 }
 
-// PersonCommunityMemberEdge — Person → Community: person is an
-// explicit member of this community.
+// PersonCommunityMemberEdge — Person → Community: person is an explicit member of this community.
 type PersonCommunityMemberEdge struct {
-	ID               string `json:"id"`
-	// format: "edge-[source-slug]-person_community_member-[target-slug]"
+	ID               string `json:"id"` // format: "edge-[source-slug]-person_community_member-[target-slug]"
 	RelationshipType string `json:"relationshipType"` // "person_community_member"
 	Source           string `json:"source"`           // PersonNode ID
 	Target           string `json:"target"`           // CommunityNode ID
@@ -988,8 +942,7 @@ type PersonCommunityMemberEdge struct {
 // Resolved at query time via three-hop traversal:
 // MasterRole → (InstanceOfEdge) → Role → (FillsRoleEdge) → Person.
 type MasterRoleCommunityMemberEdge struct {
-	ID               string `json:"id"`
-	// format: "edge-[source-slug]-master_role_community_member-[target-slug]"
+	ID               string `json:"id"` // format: "edge-[source-slug]-master_role_community_member-[target-slug]"
 	RelationshipType string `json:"relationshipType"` // "master_role_community_member"
 	Source           string `json:"source"`           // MasterRoleNode ID
 	Target           string `json:"target"`           // CommunityNode ID
@@ -1000,26 +953,82 @@ type MasterRoleCommunityMemberEdge struct {
 // ─────────────────────────────────────────────
 
 // GraphEdge is the union of all directed edge types in the graph.
-// Use a type switch to discriminate between concrete edge types at runtime.
-type GraphEdge interface{}
+// Every concrete edge type implements EdgeType() — only valid edge
+// types can be inserted into GraphData.Edges.
+type GraphEdge interface {
+	EdgeType() string
+}
 
 // GraphData is the complete graph data model.
 type GraphData struct {
-	Teams            []TeamNode           `json:"teams"`
-	TemporaryTeams   []TemporaryTeamNode  `json:"temporaryTeams"`
-	LegalEntities    []LegalEntityNode    `json:"legalEntities"`
-	Persons          []PersonNode         `json:"persons"`
-	MasterRoles      []MasterRoleNode     `json:"masterRoles"`
-	Roles            []RoleNode           `json:"roles"`
-	ValueStreams      []ValueStreamNode    `json:"valueStreams"`
-	Domains          []DomainNode         `json:"domains"`
-	GovernanceBodies []GovernanceBodyNode `json:"governanceBodies"`
-	Services         []ServiceNode        `json:"services"`
-	CostCenters      []CostCenterNode     `json:"costCenters"`
-	KPIs             []KPINode            `json:"kpis"`
-	OKRs             []OKRNode            `json:"okrs"`
+	Teams                []TeamNode               `json:"teams"`
+	TemporaryTeams       []TemporaryTeamNode      `json:"temporaryTeams"`
+	LegalEntities        []LegalEntityNode        `json:"legalEntities"`
+	Persons              []PersonNode             `json:"persons"`
+	MasterRoles          []MasterRoleNode         `json:"masterRoles"`
+	Roles                []RoleNode               `json:"roles"`
+	ValueStreams          []ValueStreamNode        `json:"valueStreams"`
+	Domains              []DomainNode             `json:"domains"`
+	GovernanceBodies     []GovernanceBodyNode     `json:"governanceBodies"`
+	Services             []ServiceNode            `json:"services"`
+	CostCenters          []CostCenterNode         `json:"costCenters"`
+	KPIs                 []KPINode                `json:"kpis"`
+	OKRs                 []OKRNode                `json:"okrs"`
 	Processes            []ProcessNode            `json:"processes"`
 	BusinessCapabilities []BusinessCapabilityNode `json:"businessCapabilities"`
 	Communities          []CommunityNode          `json:"communities"`
 	Edges                []GraphEdge              `json:"edges"`
 }
+
+// ─────────────────────────────────────────────
+// GraphEdge implementations
+// ─────────────────────────────────────────────
+
+func (e LegalEntityParentOfEdge) EdgeType() string               { return "legal_entity_parent_of" }
+func (e LegalRepresentativeEdge) EdgeType() string               { return "is_legal_representative_of" }
+func (e BelongsToLegalEntityEdge) EdgeType() string              { return "belongs_to_legal_entity" }
+func (e ManagedByLegalEntityEdge) EdgeType() string              { return "managed_by_legal_entity" }
+func (e SponsorsEdge) EdgeType() string                          { return "sponsors" }
+func (e ParentOfEdge) EdgeType() string                          { return "parent_of" }
+func (e TempTeamParentOfEdge) EdgeType() string                  { return "temp_team_parent_of" }
+func (e HasRoleEdge) EdgeType() string                           { return "has_role" }
+func (e InstanceOfEdge) EdgeType() string                        { return "instance_of" }
+func (e SupervisesEdge) EdgeType() string                        { return "supervises" }
+func (e FillsRoleEdge) EdgeType() string                         { return "fills_role" }
+func (e LeadOfEdge) EdgeType() string                            { return "lead_of" }
+func (e MemberOfEdge) EdgeType() string                          { return "member_of" }
+func (e ContributesToEdge) EdgeType() string                     { return "contributes_to" }
+func (e OwnsServiceEdge) EdgeType() string                       { return "owns_service" }
+func (e ProvidesServiceEdge) EdgeType() string                   { return "provides_service" }
+func (e ConsumesServiceEdge) EdgeType() string                   { return "consumes_service" }
+func (e LegalEntityProvidesServiceEdge) EdgeType() string        { return "legal_entity_provides_service" }
+func (e ServiceDependsOnEdge) EdgeType() string                  { return "depends_on" }
+func (e GovernanceMemberEdge) EdgeType() string                  { return "governance_member" }
+func (e GovernsEdge) EdgeType() string                           { return "governs" }
+func (e GovernsServiceEdge) EdgeType() string                    { return "governs_service" }
+func (e EscalatesToEdge) EdgeType() string                       { return "escalates_to" }
+func (e DelegatesToEdge) EdgeType() string                       { return "delegates_to" }
+func (e ContributingTeamEdge) EdgeType() string                  { return "contributing_team" }
+func (e ValueStreamParentOfProcessEdge) EdgeType() string        { return "value_stream_parent_of_process" }
+func (e BusinessCapabilityParentOfProcessEdge) EdgeType() string { return "capability_parent_of_process" }
+func (e ProcessParentOfEdge) EdgeType() string                   { return "process_parent_of" }
+func (e ExecutesProcessEdge) EdgeType() string                   { return "executes_process" }
+func (e OwnsProcessEdge) EdgeType() string                       { return "owns_process" }
+func (e OwnsCostCenterEdge) EdgeType() string                    { return "owns_cost_center" }
+func (e BookedToCostCenterEdge) EdgeType() string                { return "booked_to_cost_center" }
+func (e CostCenterParentOfEdge) EdgeType() string                { return "cost_center_parent_of" }
+func (e ChargesBackToEdge) EdgeType() string                     { return "charges_back_to" }
+func (e KPIParentOfEdge) EdgeType() string                       { return "kpi_parent_of" }
+func (e ContributesToKPIEdge) EdgeType() string                  { return "contributes_to_kpi" }
+func (e KPIDependsOnEdge) EdgeType() string                      { return "kpi_depends_on" }
+func (e OKRParentOfEdge) EdgeType() string                       { return "okr_parent_of" }
+func (e AlignedToOKREdge) EdgeType() string                      { return "aligned_to_okr" }
+func (e OwnsOKREdge) EdgeType() string                           { return "owns_okr" }
+func (e MeasuredByKPIEdge) EdgeType() string                     { return "measured_by_kpi" }
+func (e BelongsToDomainEdge) EdgeType() string                   { return "belongs_to_domain" }
+func (e CapabilityParentOfEdge) EdgeType() string                { return "capability_parent_of" }
+func (e EnablesValueStreamEdge) EdgeType() string                { return "enables_value_stream" }
+func (e OwnsCapabilityEdge) EdgeType() string                    { return "owns_capability" }
+func (e CommunityLeadEdge) EdgeType() string                     { return "community_lead" }
+func (e PersonCommunityMemberEdge) EdgeType() string             { return "person_community_member" }
+func (e MasterRoleCommunityMemberEdge) EdgeType() string         { return "master_role_community_member" }
